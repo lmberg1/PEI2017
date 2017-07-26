@@ -1,4 +1,5 @@
 function [rotxdata, rotydata] = rotateCMT(cmtcode, plotornot)
+% [rotxdata, rotydata] = rotateCMT(cmtcode, plotornot)
 %
 % rotates the x and y data from a given earthquake event to the back 
 % azimuth angle, with the option to plot
@@ -19,7 +20,8 @@ function [rotxdata, rotydata] = rotateCMT(cmtcode, plotornot)
 % 
 % [rotxdata, rotydata] = rotateCMT('C201609031202A', 0)
 % (rotates data without plotting)
-
+%
+% Last modified by lmberg@princeton.edu on 07/26/2017
 
 defval('plotornot', 1);
 
