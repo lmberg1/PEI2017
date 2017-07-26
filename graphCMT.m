@@ -21,7 +21,7 @@ function graphCMT(cmtcode, component)
 % graphCMT('C201607292118A')-- graphs the earthquake that occurs on July
 %                              29, 2016 at 21:18
 %
-% Last modified by lmberg@princeton.edu 07/26/2017
+% Last modified by lmberg@princeton.edu on 07/26/2017
 
 % figure directory name
 dirfig=fullfile('/home/lmberg/internship/matlab','figures');
