@@ -37,7 +37,7 @@ function [vxr, vyr, maxTheta, maxms] = rotatevec(vx, vy, theta, delta, plotit)
 % (rotates vx and vy by the integer angles between 0 and 90 degrees and
 % picks the angle yielding the highest energy on one component)
 %
-% Use with Frederick J. Simons' program: defval.m
+% Use with Frederik J. Simons' program: defval.m
 %
 % Adapted from Anna Brummen's rotatevec.m
 % Last modified by lmberg@princeton.edu on 07/27/2017
