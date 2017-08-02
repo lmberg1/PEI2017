@@ -2,7 +2,7 @@ function labelFilterBand(low, high, str)
 % labelFilterBand(low, high, location)
 %
 % places a label in the upper right corner of current figure with bandpass
-% filter limits
+% filter limits [use placeLabel.m for more versatility in labeling]
 %
 % INPUT
 %
