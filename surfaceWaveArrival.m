@@ -1,5 +1,5 @@
-function [loveArrival, rayleighArrival] = surfaceWaveArrival(evtLat, ...
-    evtLon, staLat, staLon, evtTime)
+function [loveArrival, rayleighArrival] = surfaceWaveArrival(evla, evlo,...
+    stla, stlo, evtTime)
 % [loveArrival, rayleighArrival] = surfaceWaveArrival(evtLat, ...
 %    evtLon, staLat, staLon, evtTime)
 %
@@ -8,10 +8,10 @@ function [loveArrival, rayleighArrival] = surfaceWaveArrival(evtLat, ...
 %
 % INPUT: 
 % 
-% evtLat        latitude of event
-% evtLon        longitude of event
-% staLat        latitude of station
-% staLon        longitude of station
+% evla          latitude of event
+% evlo          longitude of event
+% stla          latitude of station
+% stlo          longitude of station
 % evtTime       time of event in datestr format (e.g. 20-Oct-2016 00:09:26)
 % 
 % OUTPUT:
@@ -38,7 +38,7 @@ loveWaveSpeed = 4.5;        %approximate speed of love wave (km/s)
 evtTime = datenum(evtTime); %change event time to date number
 
 %calculate distance between station and event epicenter
-epiDist = grcdist([evtLon evtLat], [staLon, staLat]);
+epiDist = grcdist([evlo evla], [stlo stla]);
 
 %find arrival times, rounding to nearest second
 travelTimeLove = round(epiDist / loveWaveSpeed);
