@@ -1,5 +1,5 @@
 function graphDistVsMagVisEvents(filename, option, cutoff, histornot)
-% graphDistVsMagVisEvents(filename, option, histornot)
+% graphDistVsMagVisEvents(filename, option, cutoff, histornot)
 %
 % plots distance in degrees (between princeton seismeter and event) against
 % the moment magnitude for only those events above a certain
@@ -8,11 +8,13 @@ function graphDistVsMagVisEvents(filename, option, cutoff, histornot)
 % INPUT
 % 
 % filename      the name of the file to be graphed
-%
 % option        an integer between 1 and 3
 %               1: frequency band from 0.01 Hz to 0.1 Hz
 %               2: frequency band from 0.1 Hz to 1 Hz
 %               3: frequency band from 0.5 Hz to 2 Hz
+% cutoff        the signal to noise threshold for an event to be considered
+%               visible. Defaults to 5
+%
 %
 % histornot     1 if histograms desired, 0 if not
 %
@@ -86,7 +88,8 @@ if histornot == 1
     ylim([4 9]);
     ttl = sprintf("Visible Earthquakes [" + cmp + " Component]");
     title(ttl)
-    placeLabel("n = " + n, 'NorthWest');
+    txt = sprintf('n = %d\nSNR > %d', n, cutoff);
+    placeLabel(txt, 'NorthWest');
     labelFilterBand(f1, f2);
     degSym = sprintf('%c', char(176));
     xlabel("Distance from Princeton Station (" + degSym + ")")
@@ -141,7 +144,8 @@ else
     ylim([4 9]);
     ttl = sprintf("Visible Earthquakes [" + cmp + " Component]");
     title(ttl)
-    placeLabel("n = " + n, 'NorthWest');
+    txt = sprintf('n = %d\nSNR > %d', n, cutoff);
+    placeLabel(txt, 'NorthWest');
     labelFilterBand(f1, f2);
     degSym = sprintf('%c', char(176));
     xlabel("Distance from Princeton Station (" + degSym + ")")
@@ -169,7 +173,8 @@ else
     orient landscape
 end
 %
-fname = sprintf('%s%sVisibleEvents_%02.2f-%02.2f', cmp, meth, f1, f2);
+fname = sprintf('%s%sVisibleEventsSNR%d_%02.2f-%02.2f', ...
+    cmp, meth, cutoff, f1, f2);
 print('-dpdf', '-fillpage', fullfile('~/internship/matlab/figures/', ...
     sprintf('%s%s', fname, '.pdf')))
 %}

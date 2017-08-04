@@ -21,19 +21,25 @@ function graphCMT(cmtcode, component)
 % graphCMT('C201607292118A')-- graphs the earthquake that occurs on July
 %                              29, 2016 at 21:18
 %
+%
 % Last modified by lmberg@princeton.edu on 07/26/2017
+
 
 % figure directory name
 dirfig=fullfile('/home/lmberg/internship/matlab','figures');
 
-%if no component specified, default to Z component
+% default values
+defval('cmtcode', 'C201701220430A')
 defval('component', 'Z');
 
 CMT = cmtsol(cmtcode);           %get CMT data
 evtTime = datestr(CMT.DateTime); %time of event in UTC
 %find wave arrival times for love and rayleigh waves (given in dates in
 %string format)
-[love, rayleigh] = surfaceWaveArrival(CMT.Lat, CMT.Lon, evtTime);
+stla = 40.346;
+stlo = -74.655;
+[love, rayleigh] = surfaceWaveArrival(CMT.Lat, CMT.Lon, stla, stlo, ...
+    evtTime);
 
 %get the merged data for an hour before and hour after surface wave
 %arrivals
@@ -73,13 +79,11 @@ t3 = getSeconds(rayleigh, startdate) - t1; %rayleigh arrival
 t = t - t1;                                %center time around event time 
 t1 = 0;
 
-%remove mean and apply bandpass filter to dat before plotting
-fs = 100;     %sampling frequency
-low = 0.015;   %lower frequency bandpass corner
-high = 0.1;     %upper frequency bandpass corner
-window = 60;
-data = rmean(data);
-filteredData = bp_bu_co(data, low, high, fs, 2, 1);
+%remove mean and apply bandpass filter to data before plotting
+f1 = 0.01;    %lower frequency bandpass corner
+f2 = 0.1;     %upper frequency bandpass corner
+window = 120;
+filteredData = cleanData(data, f1, f2);
 dataLabel = char("Filtered " + component + " Data");
 plot(t, filteredData, 'k', 'DisplayName', dataLabel)
 height = get(hax, 'YLim');
@@ -88,25 +92,32 @@ height = get(hax, 'YLim');
 %rayleigh arrival time, as well as the noise and signal windows for 
 %calculating the signal to noise ratio
 line([0 0], height, 'Color', 'r', 'DisplayName', 'Event Start Time')
-line([t2 t2], height, 'Color', 'g', 'DisplayName', 'Love Wave Arrival')
-line([t3 t3], height, 'Color', 'b', 'DisplayName', 'Rayleigh Wave Arrival')
-xevt = [(t1-window) (t1+window) (t1+window) (t1-window)];
-xlov = [(t2) (t2+2*window) (t2+2*window) (t2)];
-xrayl = [(t3-window) (t3+window) (t3+window) (t3-window)];
+xevt = [(t1) (t1 + window) (t1 + window) (t1)];
 yval = [height(1) height(1) height(2) height(2)];
-patch(xevt, yval, 'r', 'DisplayName', 'Noise Window', 'FaceAlpha', 0.25);
-patch(xrayl, yval, 'b', 'DisplayName', 'Rayleigh Window', ...
-    'FaceAlpha', 0.25);
-patch(xlov, yval, 'g', 'DisplayName', 'Love Window', ...
-    'FaceAlpha', 0.25);
+patch(xevt, yval, 'r', 'DisplayName', 'Noise Window', 'FaceAlpha', 0.25,...
+    'EdgeColor', 'none');
+
+% draw rayleigh wave info if Z comp and love wave info if X or Y comp
+if strcmp(component, 'Z')
+    xrayl = [(t3) (t3 + window) (t3 + window) (t3)];
+    line([t3 t3], height, 'Color', 'b', 'DisplayName', ...
+        'Rayleigh Wave Arrival')
+    patch(xrayl, yval, 'c', 'DisplayName', 'Rayleigh Window', ...
+        'FaceAlpha', 0.25, 'EdgeColor', 'none');
+else
+    xlov = [(t2) (t2 + window) (t2 + window) (t2)];
+    line([t2 t2], height, 'Color', 'b', 'DisplayName', 'Love Wave Arrival')
+    patch(xlov, yval, 'g', 'DisplayName', 'Love Window', ...
+        'FaceAlpha', 0.25, 'EdgeColor', 'none');
+end
 
 %calculate and place lines on graph for pwave and swave arrivals (if they 
-%exist)]
-phase = ['P'];
-phaseName = ['P Wave'];
+%exist)
+phase = ["P" "S"];
+phaseName = ["P Wave" "S Wave"];
 color = ['m' 'y' 'c' 'r' 'g' 'b'];
 for i = 1:length(phase)
-    tp = taupTime([], CMT.Dep, phase(i), 'sta', [40.346 -74.655], ...
+    tp = taupTime([], CMT.Dep, char(phase(i)), 'sta', [40.346 -74.655], ...
         'evt', [CMT.Lat CMT.Lon]);
     if ~isempty(tp)
         line([(t1 + tp(1).time) (t1 + tp(1).time)], height, ...
@@ -116,10 +127,10 @@ end
 
 %set up graph format specifics
 xlim([-300 t(end)])
-lg = legend('Location','SouthEast');
+lg = legend('Location','NorthWest');
 ttl = sprintf('Event %s; Magnitude %0.2f (Mw)', cmtcode, CMT.Mw);
-centertitle(xlim(), ylim(), ttl)
-labelFilterBand(low, high, deblank(CMT.Location));
+title(ttl)
+labelFilterBand(f1, f2, deblank(CMT.Location));
 xlabel("Time (s)")
 
 %Print the figure
