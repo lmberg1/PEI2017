@@ -1,0 +1,223 @@
+function compareVisEvents(file1, cutoff1, index1, file2, cutoff2, index2)
+% compareVisEvents(file1, cutoff1, index1, file2, cutoff2, index2)
+%
+% plots the intersection of visible events from to different signal to
+% noise ratio calculations from the two files
+%
+% INPUT
+% 
+% file1         the name of the first file
+% cutoff1       the signal to noise threshold for the first file
+% index1        the desired frequency band for the first file, 
+%               an integer between 1 and 3
+%               1: frequency band from 0.01 Hz to 0.1 Hz
+%               2: frequency band from 0.1 Hz to 1 Hz
+%               3: frequency band from 0.5 Hz to 2 Hz
+% file2         the name of the second file
+% cutoff2       the signal to noise threshold for the second file
+% index2        see index1, but the the second file
+%
+%
+% Last modified by lmberg@princeton.edu on 08/11/2017
+
+
+% default values
+defval('file1', 'zAmpRotSNR.txt')
+defval('cutoff1', 5)
+defval('index1', 1)
+defval('file2', 'zVarRotSNR.txt')
+defval('cutoff2', 25)
+defval('index2', 1)
+
+% find the frequency bands for the given indices of first file
+if index1 == 1
+    f11 = 0.01;
+    f12 = 0.1;
+elseif index1 == 2
+    f11 = 0.1;
+    f12 = 1;
+elseif index1 == 3
+    f11 = 0.5;
+    f12 = 2;
+else
+    error('Please specify index1 as integer from 1 to 3')
+end
+
+% find the frequency bands for the given indices of second file
+if index2 == 1
+    f21 = 0.01;
+    f22 = 0.1;
+elseif index2 == 2
+    f21 = 0.1;
+    f22 = 1;
+elseif index2 == 3
+    f21 = 0.5;
+    f22 = 2;
+else
+    error('Please specify index2 as integer from 1 to 3')
+end
+
+% get the codes and SNR for the events above the threshold for each file
+[codes1, snr1] = getEventsAboveSNRCutoff(file1, cutoff1, index1);
+[codes2, snr2] = getEventsAboveSNRCutoff(file2, cutoff2, index2);
+
+% initialize arrays to hold degrees and magnitude
+degrees1 = nan([1 length(codes1)]);
+mag1 = nan([1 length(codes1)]);
+degrees2 = nan([1 length(codes2)]);
+mag2 = nan([1 length(codes2)]);
+
+% station latitude and longitude
+stlo = -74.655;
+stla = 40.346;
+
+% fill degree and magnitude arrays for each cmtcode for file1
+for i = 1:length(codes1)
+    CMT = cmtsol(codes1(i));
+    [~, degrees1(i)] = grcdist([CMT.Lon CMT.Lat], [stlo stla]);
+    mag1(i) = CMT.Mw;
+end
+
+% fill degree and magnitude arrays for each cmtcode for file2
+for i = 1:length(codes2)
+    CMT = cmtsol(codes2(i));
+    [~, degrees2(i)] = grcdist([CMT.Lon CMT.Lat], [stlo stla]);
+    mag2(i) = CMT.Mw;
+end
+
+% make sure marker sizes aren't too big
+if max(snr1) > 300
+    snr1 = sqrt(snr1);
+end
+
+% make sure marker sizes aren't too big
+if max(snr2) > 300
+    snr2 = sqrt(snr2);
+end
+
+% pick largest snr to make legend
+if max(snr1) > max(snr2)
+    snr = snr1;
+else
+    snr = snr2;
+end
+
+% make sure all arrays are row vectors
+degrees1 = degrees1(:)';
+mag1 = mag1(:)';
+snr1 = snr1(:)';
+degrees2 = degrees2(:)';
+mag2 = mag2(:)';
+snr2 = snr2(:)';
+
+% fill data arrays with degrees, magnitude, and SNR to be used for marker
+% size
+data1 = [degrees1; mag1; snr1];
+data2 = [degrees2; mag2; snr2];
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% create figure
+figure;
+subplot(4, 7, [1:5 8:12 15:19 22:26])
+
+% plot the intersections
+[num1, num2, numIntersect] = plotIntersections(data1, data2, 0);
+totalPts = num1 + num2 + numIntersect;
+
+% x axis
+xlim([1 180])
+xticks(0:30:180)
+degSym = sprintf('%c', char(176));
+xlabel("Distance from Princeton Seismometer (" + degSym + ")")
+
+% y axis
+ylim([4.5 9])
+yticks([4:1:9])
+ylabel("Moment Magnitude (Mw)")
+
+% title
+ttl = title("Intersecting Events for Different SNR Calculations");
+set(ttl, 'Position', [105 9.2 0])
+
+% legend for intersecting points
+legentry = sprintf('%s\n%s', "Intersecting Pts =  " + numIntersect, ...
+    "Total Pts = " + totalPts);
+l3 = legend(legentry);
+set(l3, 'Location', 'NorthWest')
+box on
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% create legend for different colors
+
+% first entry
+sp = subplot(4, 7, 7);
+b = plot(0, 0, 'o', 'MarkerEdgeColor', 'c');
+set(b, 'visible', 'off')
+[~, fname1, ~] = fileparts(file1);
+cmp = string(upper(fname1(1)));
+meth = string(fname1(2:4));
+if strcmp(meth, "Var")
+    method = "Variance";
+else
+    method = "Amplitude";
+end
+legentry = sprintf('%s\n%s\n%s\n%s\n%s', ...
+    "Method: " + method, ...
+    "Component: " + cmp, ...
+    "Freq: " + sprintf('%02.2f-%02.2fHZ', f11, f12), ...
+    "SNR Cutoff: " + cutoff1, ...
+    "Unique Pts: " + num1);
+l1 = legend(legentry);
+set(get(l1, 'Title'), 'String', "SNR Calculation 1")
+set(sp, 'Visible', 'off')
+set(l1, 'Position', get(sp, 'Position'))
+
+% second entry
+sp = subplot(4, 7, 14);
+b = plot(0, 0, 'o', 'MarkerEdgeColor', 'g');
+set(b, 'visible', 'off')
+[~, fname2, ~] = fileparts(file2);
+cmp = string(upper(fname2(1)));
+meth = string(fname2(2:4));
+if strcmp(meth, "Var")
+    method = "Variance";
+else
+    method = "Amplitude";
+end
+legentry = sprintf('%s\n%s\n%s\n%s\n%s', ...
+    "Method: " + method, ...
+    "Component: " + cmp, ...
+    "Freq: " + sprintf('%02.2f-%02.2fHZ', f21, f22), ...
+    "SNR Cutoff: " + cutoff2, ...
+    "Unique Pts: " + num2, "");
+l2 = legend(legentry);
+set(get(l2, 'Title'), 'String', "SNR Calculation 2")
+set(sp, 'Visible', 'off')
+set(l2, 'Position', get(sp, 'Position'))
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% create legend with size markers
+sp = subplot(4, 7, [21 28]);
+bubsizes = [min([cutoff1 cutoff2]) floor(mean([min(snr) max(snr)])/25)*25 ...
+    ceil(max(snr)/50)*50]; % marker sizes (rounded to nice numbers)
+legentry = cell(size(bubsizes));
+for ind = 1:numel(bubsizes)
+   b = plot(0, 0, 'o', 'markersize', sqrt(bubsizes(ind)), ...
+       'MarkerEdgeColor', 'm');
+   hold on;
+   set(b, 'visible', 'off')
+   legentry{ind} = num2str(bubsizes(ind));
+end
+l = legend(legentry);
+set(get(l, 'Title'), 'String', "SNR")
+set(sp, 'Visible', 'off')
+set(l, 'Position', get(sp, 'Position'))
+
+box on
+orient landscape
+
+%{
+fname = char("intersect_" + fname1 + index1 + "_" + fname2 + index2)
+print('-dpdf', '-bestfit', fullfile('~/internship/matlab/figures/', fname))
+%}
+
